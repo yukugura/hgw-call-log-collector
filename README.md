@@ -9,7 +9,7 @@ GitHubリポジトリ名は `hgw-call-log-collector` を想定しています。
 Ubuntuでは、リポジトリをクローンしてインストーラーを実行するだけで設定できます。初回のみHGWとMySQLのパスワードを入力します。既に `.env` がある場合は上書きしません。
 
 ```bash
-git clone https://github.com/＜あなたのアカウント＞/hgw-call-log-collector.git
+git clone https://github.com/yukugura/hgw-call-log-collector.git
 cd hgw-call-log-collector
 bash install.sh
 ```
