@@ -89,6 +89,10 @@ systemctl list-timers hgw-call-logger.timer
 journalctl -u hgw-call-logger.service -f
 ```
 
+---
+
+Created with OpenAI Codex.
+
 ## 注意
 
 - `.env` は認証情報を含むため、Gitに追加しないでください。
