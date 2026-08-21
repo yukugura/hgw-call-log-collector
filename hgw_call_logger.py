@@ -225,9 +225,9 @@ def pre_records(html: str) -> list[dict[str, str]]:
             continue
         timestamp_line = re.sub(r"^\s*\d+\.\s+", "", block[0]).strip()
         # HGWは日時を固定幅（24文字）で並べる。未接続は ********** となる。
-        call_date_time = timestamp_line[:24].strip()
-        started_at = timestamp_line[26:50].strip()
-        ended_at = timestamp_line[52:].strip()
+        call_date_time = clean(timestamp_line[:24])
+        started_at = clean(timestamp_line[26:50])
+        ended_at = clean(timestamp_line[52:])
         line1 = re.split(r"\s{2,}", block[1].strip(), maxsplit=1)
         line2 = re.split(r"\s{2,}", block[2].strip(), maxsplit=2)
         peer_ip_line = block[4].strip()
@@ -236,14 +236,14 @@ def pre_records(html: str) -> list[dict[str, str]]:
             "call_date_time": call_date_time,
             "started_at_text": started_at,
             "ended_at_text": ended_at,
-            "device_phone_number": line1[0] if line1 else "",
-            "call_direction": line1[1] if len(line1) > 1 else "",
-            "displayed_number": line2[0] if line2 else "",
-            "media_type": line2[1] if len(line2) > 1 else "",
-            "peer_phone_number": block[3].strip(),
+            "device_phone_number": clean(line1[0]) if line1 else "",
+            "call_direction": clean(line1[1]) if len(line1) > 1 else "",
+            "displayed_number": clean(line2[0]) if line2 else "",
+            "media_type": clean(line2[1]) if len(line2) > 1 else "",
+            "peer_phone_number": clean(block[3]),
             # HGWの固定幅ログには他列の空白も含まれるため、IPv4だけを保存する。
             "peer_ip_address": peer_ip_match.group(0) if peer_ip_match else clean(peer_ip_line),
-            "disconnect_source": block[5].strip(),
+            "disconnect_source": clean(block[5]),
             # 元の固定幅表示も保持し、機種差があっても情報を失わない。
             "hgw_raw_lines": block,
         }
@@ -264,6 +264,10 @@ def source_hash(record: dict[str, str]) -> str:
     # 保存するpeer_ip_address自体は上でIPv4だけに整形している。
     raw_lines = record.get("hgw_raw_lines")
     if isinstance(raw_lines, list) and len(raw_lines) >= 5:
+        timestamp_line = re.sub(r"^\s*\d+\.\s+", "", raw_lines[0]).strip()
+        identity["call_date_time"] = timestamp_line[:24].strip()
+        identity["started_at_text"] = timestamp_line[26:50].strip()
+        identity["ended_at_text"] = timestamp_line[52:].strip()
         identity["peer_ip_address"] = raw_lines[4].strip()
     payload = json.dumps(identity, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
