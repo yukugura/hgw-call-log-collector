@@ -81,7 +81,7 @@ else
   echo "既存の .env を使用します。"
 fi
 
-if [[ ! -x "$SCRIPT_DIR/.venv/bin/python" ]]; then
+if [[ ! -x "$SCRIPT_DIR/.venv/bin/python" || ! -x "$SCRIPT_DIR/.venv/bin/pip" ]]; then
   # 失敗したvenvの残骸だけを削除して作り直す。
   rm -rf "$SCRIPT_DIR/.venv"
   if ! python3 -m venv "$SCRIPT_DIR/.venv"; then
