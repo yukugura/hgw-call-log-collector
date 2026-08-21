@@ -307,7 +307,16 @@ def save(records: Iterable[dict[str, str]]) -> int:
     with connect_db() as connection:
         ensure_schema(connection)
         with connection.cursor() as cursor:
-            affected = cursor.executemany(sql, rows)
+            # INSERT IGNOREへ既存100件を毎回渡すと、MySQL/InnoDBが無視した行にも
+            # AUTO_INCREMENT値を消費し、IDに大きな欠番ができることがある。
+            placeholders = ", ".join(["%s"] * len(rows))
+            cursor.execute(
+                f"SELECT source_hash FROM call_logs WHERE source_hash IN ({placeholders})",
+                tuple(row["source_hash"] for row in rows),
+            )
+            existing_hashes = {result[0] for result in cursor.fetchall()}
+            new_rows = [row for row in rows if row["source_hash"] not in existing_hashes]
+            affected = cursor.executemany(sql, new_rows) if new_rows else 0
         connection.commit()
     return affected
 
