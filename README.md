@@ -16,6 +16,8 @@ bash install.sh
 
 インストーラーはPython仮想環境・依存関係・systemdサービス／10秒タイマーを作成し、初回取得まで実行します。DB `hgw_call_logs` は事前に作成しておいてください。
 
+root専用のLXCコンテナでも、そのまま `bash install.sh` を実行できます。その場合、collectorのsystemdサービスもrootとして実行されます。
+
 手動で設定する場合は、Ubuntuで任意の配置先へファイルを置き、次を実行します。
 
 ```bash

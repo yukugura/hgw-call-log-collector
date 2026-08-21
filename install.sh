@@ -4,13 +4,22 @@ set -euo pipefail
 
 SERVICE_NAME="hgw-call-logger"
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-INSTALL_USER="${SUDO_USER:-$USER}"
-INSTALL_GROUP="$(id -gn "$INSTALL_USER")"
-
 if [[ "$EUID" -eq 0 ]]; then
-  echo "sudo を付けずに、通常ユーザーとして 'bash install.sh' を実行してください。"
-  exit 1
+  # root専用のLXCコンテナでは、サービスもrootとして実行する。
+  INSTALL_USER="root"
+  INSTALL_GROUP="root"
+else
+  INSTALL_USER="${SUDO_USER:-$USER}"
+  INSTALL_GROUP="$(id -gn "$INSTALL_USER")"
 fi
+
+run_root() {
+  if [[ "$EUID" -eq 0 ]]; then
+    "$@"
+  else
+    sudo "$@"
+  fi
+}
 
 require_command() {
   command -v "$1" >/dev/null 2>&1 || {
@@ -19,13 +28,15 @@ require_command() {
   }
 }
 
-require_command sudo
 require_command systemctl
+if [[ "$EUID" -ne 0 ]]; then
+  require_command sudo
+fi
 
 if ! command -v python3 >/dev/null 2>&1 || ! python3 -m venv --help >/dev/null 2>&1; then
   echo "Python仮想環境をインストールします…"
-  sudo apt-get update
-  sudo apt-get install -y python3 python3-venv
+  run_root apt-get update
+  run_root apt-get install -y python3 python3-venv
 fi
 
 if [[ ! -f "$SCRIPT_DIR/.env" ]]; then
@@ -78,7 +89,7 @@ fi
 SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
 TIMER_FILE="/etc/systemd/system/${SERVICE_NAME}.timer"
 
-sudo tee "$SERVICE_FILE" >/dev/null <<EOF
+run_root tee "$SERVICE_FILE" >/dev/null <<EOF
 [Unit]
 Description=Collect HGW call logs into MySQL
 After=network-online.target
@@ -93,7 +104,7 @@ Environment=PYTHONUNBUFFERED=1
 ExecStart=$SCRIPT_DIR/.venv/bin/python $SCRIPT_DIR/hgw_call_logger.py
 EOF
 
-sudo tee "$TIMER_FILE" >/dev/null <<EOF
+run_root tee "$TIMER_FILE" >/dev/null <<EOF
 [Unit]
 Description=Run HGW call-log collector every 10 seconds
 
@@ -107,15 +118,15 @@ Persistent=true
 WantedBy=timers.target
 EOF
 
-sudo systemctl daemon-reload
-sudo systemctl enable --now "${SERVICE_NAME}.timer"
+run_root systemctl daemon-reload
+run_root systemctl enable --now "${SERVICE_NAME}.timer"
 
 echo
 echo "インストール完了。初回取得を実行します…"
-sudo systemctl start "${SERVICE_NAME}.service"
-sudo systemctl --no-pager --full status "${SERVICE_NAME}.service"
+run_root systemctl start "${SERVICE_NAME}.service"
+run_root systemctl --no-pager --full status "${SERVICE_NAME}.service"
 echo
 echo "定期実行の状態:"
-sudo systemctl --no-pager --full status "${SERVICE_NAME}.timer"
+run_root systemctl --no-pager --full status "${SERVICE_NAME}.timer"
 echo
-echo "ログ確認: sudo journalctl -u ${SERVICE_NAME}.service -f"
+echo "ログ確認: journalctl -u ${SERVICE_NAME}.service -f"
