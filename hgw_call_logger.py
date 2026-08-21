@@ -230,6 +230,8 @@ def pre_records(html: str) -> list[dict[str, str]]:
         ended_at = timestamp_line[52:].strip()
         line1 = re.split(r"\s{2,}", block[1].strip(), maxsplit=1)
         line2 = re.split(r"\s{2,}", block[2].strip(), maxsplit=2)
+        peer_ip_line = block[4].strip()
+        peer_ip_match = re.search(r"(?:\d{1,3}\.){3}\d{1,3}", peer_ip_line)
         record = {
             "call_date_time": call_date_time,
             "started_at_text": started_at,
@@ -239,7 +241,8 @@ def pre_records(html: str) -> list[dict[str, str]]:
             "displayed_number": line2[0] if line2 else "",
             "media_type": line2[1] if len(line2) > 1 else "",
             "peer_phone_number": block[3].strip(),
-            "peer_ip_address": block[4].strip(),
+            # HGWの固定幅ログには他列の空白も含まれるため、IPv4だけを保存する。
+            "peer_ip_address": peer_ip_match.group(0) if peer_ip_match else clean(peer_ip_line),
             "disconnect_source": block[5].strip(),
             # 元の固定幅表示も保持し、機種差があっても情報を失わない。
             "hgw_raw_lines": block,
@@ -257,6 +260,11 @@ def source_hash(record: dict[str, str]) -> str:
     # 同一履歴は同じハッシュになるため、ポーリングによる重複登録を防げる。
     # hgw_raw_lines は画面上の順位を含むため、ここへ入れてはいけない。
     identity = {field: record.get(field, "") for field in CALL_IDENTITY_FIELDS}
+    # 既存DBとの互換性のため、PRE形式では整形前のIP行を重複判定に使う。
+    # 保存するpeer_ip_address自体は上でIPv4だけに整形している。
+    raw_lines = record.get("hgw_raw_lines")
+    if isinstance(raw_lines, list) and len(raw_lines) >= 5:
+        identity["peer_ip_address"] = raw_lines[4].strip()
     payload = json.dumps(identity, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
