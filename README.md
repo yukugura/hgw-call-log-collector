@@ -30,7 +30,7 @@ cp .env.example .env
 chmod 600 .env
 ```
 
-`.env` にHGWのHTTP Basic認証情報とMySQLの接続情報を記入してください。HGWの接続先は `HGW_IP`（現在は `192.168.0.2`）で変更できます。HGWのWeb設定はユーザー名 `user` と、初期設定時に設定した機器設定用パスワードで認証します。
+`.env` にHGWのHTTP Basic認証情報とMySQLの接続情報を記入してください。HGWの接続先は `HGW_IP`（初期値は `192.168.0.1`）で変更できます。HGWのWeb設定はユーザー名 `user` と、初期設定時に設定した機器設定用パスワードで認証します。
 
 ```dotenv
 HGW_BASIC_AUTH_USER=user

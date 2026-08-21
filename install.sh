@@ -42,16 +42,16 @@ fi
 if [[ ! -f "$SCRIPT_DIR/.env" ]]; then
   echo "HGWとMySQLの接続情報を入力してください。Enterで [ ] 内の既定値を使います。"
 
-  read -r -p "HGW IP [192.168.0.2]: " HGW_IP
-  HGW_IP="${HGW_IP:-192.168.0.2}"
+  read -r -p "HGW IP [192.168.0.1]: " HGW_IP
+  HGW_IP="${HGW_IP:-192.168.0.1}"
   read -r -p "HGW Basic認証ユーザー [user]: " HGW_USER
   HGW_USER="${HGW_USER:-user}"
   read -r -s -p "HGW Basic認証パスワード: " HGW_PASSWORD
   echo
   [[ -n "$HGW_PASSWORD" ]] || { echo "HGWパスワードは必須です。" >&2; exit 1; }
 
-  read -r -p "MySQLホスト [192.168.100.198]: " MYSQL_HOST
-  MYSQL_HOST="${MYSQL_HOST:-192.168.100.198}"
+  read -r -p "MySQLホスト [192.168.0.2]: " MYSQL_HOST
+  MYSQL_HOST="${MYSQL_HOST:-192.168.0.2}"
   read -r -p "MySQLポート [3306]: " MYSQL_PORT
   MYSQL_PORT="${MYSQL_PORT:-3306}"
   read -r -p "MySQLデータベース [hgw_call_logs]: " MYSQL_DATABASE
