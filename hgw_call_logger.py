@@ -46,6 +46,25 @@ HEADERS = {
 
 DB_COLUMNS = tuple(HEADERS.values())
 
+# HGW画面上の表示順位（PRE内の「1.」「2.」など）は、新しい通話が追加されるたびに
+# 全履歴で変化する。重複判定には順位やraw_recordを含めず、通話を識別する値だけを使う。
+CALL_IDENTITY_FIELDS = (
+    "call_date_time",
+    "started_at_text",
+    "ended_at_text",
+    "device_phone_number",
+    "call_direction",
+    "displayed_number",
+    "media_type",
+    "extension_number",
+    "peer_phone_number",
+    "peer_ip_address",
+    "disconnect_source",
+    "disconnect_reason",
+    "sip_disconnect_reason",
+    "channel_number",
+)
+
 CREATE_CALL_LOGS_TABLE_SQL = """
     CREATE TABLE IF NOT EXISTS call_logs (
       id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -236,7 +255,9 @@ def parse_records(html: str) -> list[dict[str, str]]:
 
 def source_hash(record: dict[str, str]) -> str:
     # 同一履歴は同じハッシュになるため、ポーリングによる重複登録を防げる。
-    payload = json.dumps(record, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    # hgw_raw_lines は画面上の順位を含むため、ここへ入れてはいけない。
+    identity = {field: record.get(field, "") for field in CALL_IDENTITY_FIELDS}
+    payload = json.dumps(identity, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
