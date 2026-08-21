@@ -33,7 +33,7 @@ if [[ "$EUID" -ne 0 ]]; then
   require_command sudo
 fi
 
-if ! command -v python3 >/dev/null 2>&1 || ! python3 -m venv --help >/dev/null 2>&1; then
+if ! command -v python3 >/dev/null 2>&1; then
   echo "Python仮想環境をインストールします…"
   run_root apt-get update
   run_root apt-get install -y python3 python3-venv
@@ -81,8 +81,16 @@ else
   echo "既存の .env を使用します。"
 fi
 
-if [[ ! -d "$SCRIPT_DIR/.venv" ]]; then
-  python3 -m venv "$SCRIPT_DIR/.venv"
+if [[ ! -x "$SCRIPT_DIR/.venv/bin/python" ]]; then
+  # 失敗したvenvの残骸だけを削除して作り直す。
+  rm -rf "$SCRIPT_DIR/.venv"
+  if ! python3 -m venv "$SCRIPT_DIR/.venv"; then
+    echo "python3-venv をインストールして仮想環境を再作成します…"
+    run_root apt-get update
+    run_root apt-get install -y python3-venv
+    rm -rf "$SCRIPT_DIR/.venv"
+    python3 -m venv "$SCRIPT_DIR/.venv"
+  fi
 fi
 "$SCRIPT_DIR/.venv/bin/pip" install --disable-pip-version-check --upgrade -r "$SCRIPT_DIR/requirements.txt"
 

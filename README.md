@@ -18,6 +18,8 @@ bash install.sh
 
 root専用のLXCコンテナでも、そのまま `bash install.sh` を実行できます。その場合、collectorのsystemdサービスもrootとして実行されます。
 
+`python3-venv` が未導入のUbuntu/Debian環境では、インストーラーが自動的に導入して仮想環境を作り直します。
+
 手動で設定する場合は、Ubuntuで任意の配置先へファイルを置き、次を実行します。
 
 ```bash
